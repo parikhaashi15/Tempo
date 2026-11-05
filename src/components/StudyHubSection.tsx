@@ -29,54 +29,63 @@ import { soundEngine } from '../services/audioService';
 import { LofiMusicPlayer } from './LofiMusicPlayer';
 import { AnimatedFireplaceCanvas } from './AnimatedFireplaceCanvas';
 
+// Direct ES module imports ensure Vite bundles and hashes images properly in production builds
+import penthouseFireplaceImg from '../assets/images/penthouse_fireplace_chicago_1793843498899.jpg';
+import chicagoPenthouseImg from '../assets/images/chicago_penthouse_window_1793843497616.jpg';
+import chicagoDuskImg from '../assets/images/chicago_skyline_dusk_1793843172296.jpg';
+import nycPenthouseImg from '../assets/images/nyc_penthouse_skyline_1793843499506.jpg';
+import londonPenthouseImg from '../assets/images/london_penthouse_view_1793843499741.jpg';
+import parisPenthouseImg from '../assets/images/paris_penthouse_eiffel_1793843500588.jpg';
+import mountainMistImg from '../assets/images/mountain_mist_forest_1793843172589.jpg';
+
 export const TIMER_WALLPAPERS = [
   {
     id: 'animated_fireplace' as const,
     name: 'Live Animated Fireplace & Chicago',
     tagline: 'Dancing flames, rising ember sparks & crackling hearth over Chicago night skyline',
-    url: '/src/assets/images/penthouse_fireplace_chicago_1793843498899.jpg',
+    url: penthouseFireplaceImg,
   },
   {
     id: 'chicago_fireplace' as const,
     name: 'Chicago Penthouse & Fireplace',
     tagline: 'Modern linear glass fireplace overlooking glittering Chicago skyline',
-    url: '/src/assets/images/penthouse_fireplace_chicago_1793843498899.jpg',
+    url: penthouseFireplaceImg,
   },
   {
     id: 'chicago_penthouse' as const,
     name: 'Chicago High-Rise Window',
     tagline: 'Panoramic floor-to-ceiling glass over Lake Michigan & towers',
-    url: '/src/assets/images/chicago_penthouse_window_1793843497616.jpg',
+    url: chicagoPenthouseImg,
   },
   {
     id: 'chicago_dusk' as const,
     name: 'Chicago Golden Dusk',
     tagline: 'High-rise perspective over Chicago river & twilight skyline',
-    url: '/src/assets/images/chicago_skyline_dusk_1793843172296.jpg',
+    url: chicagoDuskImg,
   },
   {
     id: 'nyc_penthouse' as const,
     name: 'NYC Manhattan Penthouse',
     tagline: 'Midtown Manhattan & Empire State Building from luxury suite',
-    url: '/src/assets/images/nyc_penthouse_skyline_1793843499506.jpg',
+    url: nycPenthouseImg,
   },
   {
     id: 'london_penthouse' as const,
     name: 'London Thames Penthouse',
     tagline: 'Twilight view of The Shard & city bridges from high-rise',
-    url: '/src/assets/images/london_penthouse_view_1793843499741.jpg',
+    url: londonPenthouseImg,
   },
   {
     id: 'paris_penthouse' as const,
     name: 'Paris Eiffel Penthouse',
     tagline: 'Private high-rise balcony view of illuminated Eiffel Tower',
-    url: '/src/assets/images/paris_penthouse_eiffel_1793843500588.jpg',
+    url: parisPenthouseImg,
   },
   {
     id: 'mountain' as const,
     name: 'Alpine Mountain Mist',
     tagline: 'Calm alpine pine forest & morning fog through penthouse windows',
-    url: '/src/assets/images/mountain_mist_forest_1793843172589.jpg',
+    url: mountainMistImg,
   },
   {
     id: 'none' as const,
