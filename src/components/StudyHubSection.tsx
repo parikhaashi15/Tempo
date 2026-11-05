@@ -44,48 +44,56 @@ export const TIMER_WALLPAPERS = [
     name: 'Live Animated Fireplace & Chicago',
     tagline: 'Dancing flames, rising ember sparks & crackling hearth over Chicago night skyline',
     url: penthouseFireplaceImg,
+    fallbackUrl: '/wallpapers/penthouse_fireplace_chicago_1793843498899.jpg',
   },
   {
     id: 'chicago_fireplace' as const,
     name: 'Chicago Penthouse & Fireplace',
     tagline: 'Modern linear glass fireplace overlooking glittering Chicago skyline',
     url: penthouseFireplaceImg,
+    fallbackUrl: '/wallpapers/penthouse_fireplace_chicago_1793843498899.jpg',
   },
   {
     id: 'chicago_penthouse' as const,
     name: 'Chicago High-Rise Window',
     tagline: 'Panoramic floor-to-ceiling glass over Lake Michigan & towers',
     url: chicagoPenthouseImg,
+    fallbackUrl: '/wallpapers/chicago_penthouse_window_1793843497616.jpg',
   },
   {
     id: 'chicago_dusk' as const,
     name: 'Chicago Golden Dusk',
     tagline: 'High-rise perspective over Chicago river & twilight skyline',
     url: chicagoDuskImg,
+    fallbackUrl: '/wallpapers/chicago_skyline_dusk_1793843172296.jpg',
   },
   {
     id: 'nyc_penthouse' as const,
     name: 'NYC Manhattan Penthouse',
     tagline: 'Midtown Manhattan & Empire State Building from luxury suite',
     url: nycPenthouseImg,
+    fallbackUrl: '/wallpapers/nyc_penthouse_skyline_1793843499506.jpg',
   },
   {
     id: 'london_penthouse' as const,
     name: 'London Thames Penthouse',
     tagline: 'Twilight view of The Shard & city bridges from high-rise',
     url: londonPenthouseImg,
+    fallbackUrl: '/wallpapers/london_penthouse_view_1793843499741.jpg',
   },
   {
     id: 'paris_penthouse' as const,
     name: 'Paris Eiffel Penthouse',
     tagline: 'Private high-rise balcony view of illuminated Eiffel Tower',
     url: parisPenthouseImg,
+    fallbackUrl: '/wallpapers/paris_penthouse_eiffel_1793843500588.jpg',
   },
   {
     id: 'mountain' as const,
     name: 'Alpine Mountain Mist',
     tagline: 'Calm alpine pine forest & morning fog through penthouse windows',
     url: mountainMistImg,
+    fallbackUrl: '/wallpapers/mountain_mist_forest_1793843172589.jpg',
   },
   {
     id: 'none' as const,
@@ -490,6 +498,12 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
               <img
                 src={activeBgUrl}
                 alt="Pomodoro Background"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (currentWallpaper?.fallbackUrl && target.src !== currentWallpaper.fallbackUrl) {
+                    target.src = currentWallpaper.fallbackUrl;
+                  }
+                }}
                 className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700"
                 style={{ filter: (bgConfig.blur ?? 0) > 0 ? `blur(${bgConfig.blur}px)` : 'none' }}
               />
@@ -961,6 +975,12 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
                           <img
                             src={wp.url}
                             alt={wp.name}
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (wp.fallbackUrl && target.src !== wp.fallbackUrl) {
+                                target.src = wp.fallbackUrl;
+                              }
+                            }}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         ) : (
