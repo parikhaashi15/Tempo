@@ -27,8 +27,15 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../services/audioService';
 import { LofiMusicPlayer } from './LofiMusicPlayer';
+import { AnimatedFireplaceCanvas } from './AnimatedFireplaceCanvas';
 
 export const TIMER_WALLPAPERS = [
+  {
+    id: 'animated_fireplace' as const,
+    name: 'Live Animated Fireplace & Chicago',
+    tagline: 'Dancing flames, rising ember sparks & crackling hearth over Chicago night skyline',
+    url: '/src/assets/images/penthouse_fireplace_chicago_1793843498899.jpg',
+  },
   {
     id: 'chicago_fireplace' as const,
     name: 'Chicago Penthouse & Fireplace',
@@ -117,10 +124,18 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
   const [activeTaskTitle, setActiveTaskTitle] = useState(activeTask ? ('text' in activeTask ? activeTask.text : activeTask.title) : '');
 
   // Active Timer Wallpaper
-  const bgConfig = settings.timerBackground || { type: 'chicago_fireplace', dimLevel: 0.50, blur: 0 };
+  const bgConfig = settings.timerBackground || {
+    type: 'animated_fireplace',
+    dimLevel: 0.45,
+    blur: 0,
+    fireMotion: true,
+    fireCrackleSound: true,
+  };
   const currentWallpaper = TIMER_WALLPAPERS.find(w => w.id === bgConfig.type);
   const activeBgUrl = bgConfig.type === 'custom' ? bgConfig.customUrl : currentWallpaper?.url;
   const hasActivePhoto = Boolean(activeBgUrl && bgConfig.type !== 'none');
+  const isFireplaceTheme = bgConfig.type === 'animated_fireplace' || bgConfig.type === 'chicago_fireplace';
+  const isFireMotionActive = bgConfig.fireMotion ?? isFireplaceTheme;
 
   // Feynman modal state
   const [feynmanConcept, setFeynmanConcept] = useState('');
@@ -274,6 +289,8 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
       }
       if (settings.ambientNoise !== 'none') {
         soundEngine.startAmbient(settings.ambientNoise, settings.ambientVolume);
+      } else if (bgConfig.fireCrackleSound && isFireplaceTheme) {
+        soundEngine.startAmbient('fireplace', settings.ambientVolume);
       }
       setIsRunning(true);
     } else {
@@ -334,13 +351,14 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
   };
 
   // Toggle ambient noise
-  const handleToggleAmbient = (type: 'none' | 'rain' | 'whitenoise') => {
+  const handleToggleAmbient = (type: 'none' | 'rain' | 'whitenoise' | 'fireplace') => {
     const nextType = settings.ambientNoise === type ? 'none' : type;
-    const nextSettings = { ...settings, ambientNoise: nextType };
+    const nextSettings: TimerSettings = { ...settings, ambientNoise: nextType };
     onUpdateSettings(nextSettings);
     if (nextType === 'none') {
       soundEngine.stopAmbient();
-    } else if (isRunning) {
+    } else {
+      // Start immediately so the user can enjoy the crackling hearth or rain right away
       soundEngine.startAmbient(nextType, settings.ambientVolume);
     }
   };
@@ -466,12 +484,27 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
                 className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-all duration-700"
                 style={{ filter: (bgConfig.blur ?? 0) > 0 ? `blur(${bgConfig.blur}px)` : 'none' }}
               />
+              {/* Animated Motion Flames & Floating Embers */}
+              {isFireMotionActive && (
+                <AnimatedFireplaceCanvas
+                  intensity={1.05}
+                  overlayMode={true}
+                />
+              )}
               {/* Darkness scrim for guaranteed WCAG AA text legibility */}
               <div
                 className="absolute inset-0 bg-black pointer-events-none transition-opacity duration-300"
-                style={{ opacity: bgConfig.dimLevel ?? 0.55 }}
+                style={{ opacity: bgConfig.dimLevel ?? 0.50 }}
               />
             </>
+          )}
+
+          {/* Standalone motion fireplace canvas when solid theme is active */}
+          {!hasActivePhoto && isFireMotionActive && (
+            <AnimatedFireplaceCanvas
+              intensity={1.1}
+              overlayMode={false}
+            />
           )}
 
           {/* Subtle background progress wash (when no photo) */}
@@ -649,38 +682,87 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
             </div>
 
             {/* Quick Ambient Sounds Toolbar */}
-            <div className="flex items-center gap-3 mt-6 pt-5 border-t border-[var(--theme-border)]/60 text-xs text-[var(--theme-text-muted)]">
-              <span className="hidden sm:inline">Ambient Study Noise:</span>
+            <div className={`flex flex-wrap items-center gap-2.5 mt-6 pt-5 border-t text-xs ${
+              hasActivePhoto ? 'border-white/15 text-slate-200' : 'border-[var(--theme-border)]/60 text-[var(--theme-text-muted)]'
+            }`}>
+              <span className="hidden sm:inline font-medium">Ambient Noise:</span>
+              
+              <button
+                onClick={() => handleToggleAmbient('fireplace')}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all ${
+                  settings.ambientNoise === 'fireplace'
+                    ? 'border-amber-400 bg-amber-400/25 text-amber-300 font-bold shadow-xs'
+                    : hasActivePhoto
+                    ? 'border-white/20 hover:border-amber-400 hover:text-amber-300 bg-black/30'
+                    : 'border-[var(--theme-border)] hover:border-amber-500'
+                }`}
+                title="Crackling wood fireplace sound"
+              >
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                <span>Crackling Fire</span>
+                {settings.ambientNoise === 'fireplace' && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                )}
+              </button>
+
               <button
                 onClick={() => handleToggleAmbient('rain')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all ${
                   settings.ambientNoise === 'rain'
-                    ? 'border-[var(--theme-accent)] bg-[var(--theme-accent-soft)] text-[var(--theme-accent)] font-semibold'
-                    : 'border-[var(--theme-border)] hover:border-[var(--theme-accent)]'
+                    ? 'border-sky-400 bg-sky-400/20 text-sky-300 font-bold shadow-xs'
+                    : hasActivePhoto
+                    ? 'border-white/20 hover:border-sky-400 hover:text-sky-300 bg-black/30'
+                    : 'border-[var(--theme-border)] hover:border-sky-500'
                 }`}
               >
-                <CloudRain className="w-3.5 h-3.5" />
+                <CloudRain className="w-3.5 h-3.5 text-sky-400" />
                 <span>Lo-Fi Rain</span>
               </button>
+
               <button
                 onClick={() => handleToggleAmbient('whitenoise')}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all ${
                   settings.ambientNoise === 'whitenoise'
-                    ? 'border-[var(--theme-accent)] bg-[var(--theme-accent-soft)] text-[var(--theme-accent)] font-semibold'
-                    : 'border-[var(--theme-border)] hover:border-[var(--theme-accent)]'
+                    ? 'border-emerald-400 bg-emerald-400/20 text-emerald-300 font-bold shadow-xs'
+                    : hasActivePhoto
+                    ? 'border-white/20 hover:border-emerald-400 hover:text-emerald-300 bg-black/30'
+                    : 'border-[var(--theme-border)] hover:border-emerald-500'
                 }`}
               >
-                <Activity className="w-3.5 h-3.5" />
-                <span>Soft Pink Noise</span>
+                <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Pink Noise</span>
               </button>
+
+              {/* Volume Slider if ambient noise is active */}
+              {settings.ambientNoise !== 'none' && (
+                <div className="flex items-center gap-1.5 ml-1 px-2 py-0.5 rounded-lg bg-black/30 border border-white/10">
+                  <span className="text-[10px] text-slate-300">Vol:</span>
+                  <input
+                    type="range"
+                    min="0.05"
+                    max="1"
+                    step="0.05"
+                    value={settings.ambientVolume}
+                    onChange={e => {
+                      const v = parseFloat(e.target.value);
+                      onUpdateSettings({ ...settings, ambientVolume: v });
+                      soundEngine.setAmbientVolume(v);
+                    }}
+                    className="w-16 accent-amber-400 h-1"
+                  />
+                </div>
+              )}
+
               <button
                 onClick={() => {
                   onUpdateSettings({ ...settings, soundEnabled: !settings.soundEnabled });
                 }}
-                className="p-1 text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] ml-1"
-                title={settings.soundEnabled ? 'Bell chime audio enabled' : 'Bell chime muted'}
+                className={`p-1.5 rounded-lg ml-auto transition-colors ${
+                  hasActivePhoto ? 'text-slate-200 hover:text-white hover:bg-white/10' : 'text-[var(--theme-text-muted)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-surface-subtle)]'
+                }`}
+                title={settings.soundEnabled ? 'Timer chimes enabled' : 'Timer chimes muted'}
               >
-                {settings.soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                {settings.soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
               </button>
             </div>
           </div>
@@ -827,9 +909,10 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 {TIMER_WALLPAPERS.map(wp => {
                   const isSelected = bgConfig.type === wp.id;
-                  const isChicago = wp.id === 'chicago_fireplace' || wp.id === 'chicago_penthouse' || wp.id === 'chicago_dusk';
+                  const isChicago = wp.id === 'animated_fireplace' || wp.id === 'chicago_fireplace' || wp.id === 'chicago_penthouse' || wp.id === 'chicago_dusk';
                   const cityTag = 
-                    wp.id === 'chicago_fireplace' ? '🔥 Fireplace & Chicago' :
+                    wp.id === 'animated_fireplace' ? '🔥 Live Motion & Crackle' :
+                    wp.id === 'chicago_fireplace' ? '🔥 Penthouse Fireplace' :
                     wp.id === 'chicago_penthouse' ? '★ Chicago Penthouse' :
                     wp.id === 'chicago_dusk' ? '★ Chicago Dusk' :
                     wp.id === 'nyc_penthouse' ? 'NYC Penthouse' :
@@ -842,13 +925,20 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
                       key={wp.id}
                       type="button"
                       onClick={() => {
+                        const isFp = wp.id === 'animated_fireplace' || wp.id === 'chicago_fireplace';
                         onUpdateSettings({
                           ...settings,
                           timerBackground: {
                             ...bgConfig,
                             type: wp.id,
+                            fireMotion: isFp ? true : bgConfig.fireMotion,
+                            fireCrackleSound: isFp ? true : bgConfig.fireCrackleSound,
                           },
+                          ambientNoise: wp.id === 'animated_fireplace' ? 'fireplace' : settings.ambientNoise,
                         });
+                        if (wp.id === 'animated_fireplace') {
+                          soundEngine.startAmbient('fireplace', settings.ambientVolume);
+                        }
                       }}
                       className={`group relative flex flex-col p-2.5 rounded-xl border text-left transition-all overflow-hidden ${
                         isSelected
@@ -876,7 +966,11 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
                         )}
                         {cityTag && (
                           <div className={`absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[9px] font-semibold backdrop-blur-xs ${
-                            isChicago ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40' : 'bg-black/75 text-slate-200'
+                            wp.id === 'animated_fireplace'
+                              ? 'bg-amber-500/90 text-slate-950 font-bold shadow'
+                              : isChicago
+                              ? 'bg-amber-950/80 text-amber-300 border border-amber-500/40'
+                              : 'bg-black/75 text-slate-200'
                           }`}>
                             {cityTag}
                           </div>
@@ -892,6 +986,80 @@ export const StudyHubSection: React.FC<StudyHubProps> = ({
 
               {/* Controls: Dimmer Scrim Slider + Blur + Custom URL */}
               <div className="p-3.5 rounded-xl bg-black/40 border border-white/15 backdrop-blur-md space-y-3">
+                {/* Fireplace Motion & Crackle Sound Controls */}
+                <div className="p-3 rounded-lg bg-black/50 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Flame className="w-4 h-4 text-amber-400 shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <span>Fireplace Motion & Crackling Audio</span>
+                        {isFireMotionActive && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] bg-amber-500/30 text-amber-300 border border-amber-500/40 font-semibold">
+                            Flames Active
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-slate-300">
+                        Realistic flickering flames, floating ember sparks, and organic wood crackle
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Live Motion Flames Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextMotion = !isFireMotionActive;
+                        onUpdateSettings({
+                          ...settings,
+                          timerBackground: {
+                            ...bgConfig,
+                            fireMotion: nextMotion,
+                          },
+                        });
+                      }}
+                      className={`px-2.5 py-1 text-xs rounded-lg border font-medium transition-colors ${
+                        isFireMotionActive
+                          ? 'border-amber-400 bg-amber-400/20 text-amber-300 font-semibold'
+                          : 'border-white/20 text-slate-300 hover:border-white/40'
+                      }`}
+                    >
+                      {isFireMotionActive ? '🔥 Motion Flames: ON' : 'Flames: OFF'}
+                    </button>
+
+                    {/* Crackle Sound Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const isCracklePlaying = settings.ambientNoise === 'fireplace';
+                        const nextState = !isCracklePlaying;
+                        onUpdateSettings({
+                          ...settings,
+                          ambientNoise: nextState ? 'fireplace' : 'none',
+                          timerBackground: {
+                            ...bgConfig,
+                            fireCrackleSound: nextState,
+                          },
+                        });
+                        if (nextState) {
+                          soundEngine.startAmbient('fireplace', settings.ambientVolume);
+                        } else {
+                          soundEngine.stopAmbient();
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border font-medium transition-colors ${
+                        settings.ambientNoise === 'fireplace'
+                          ? 'border-amber-400 bg-amber-400/25 text-amber-300 font-bold shadow-xs'
+                          : 'border-white/20 text-slate-300 hover:border-white/40'
+                      }`}
+                    >
+                      <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{settings.ambientNoise === 'fireplace' ? 'Crackle: Playing' : 'Crackle: Muted'}</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Dimmer Slider */}
                   <div>

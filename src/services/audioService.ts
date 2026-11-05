@@ -117,14 +117,65 @@ class SoundEngine {
     }
   }
 
-  // Generative lo-fi study noise (rain or pink noise)
-  startAmbient(type: 'rain' | 'whitenoise', volume = 0.25) {
+  private crackleTimer: ReturnType<typeof setTimeout> | null = null;
+  private currentVolume = 0.25;
+
+  // Generative lo-fi study noise (rain, pink/white noise, or crackling fireplace)
+  startAmbient(type: 'rain' | 'whitenoise' | 'fireplace', volume = 0.25) {
     this.stopAmbient();
+    this.currentVolume = volume;
     const ctx = this.getContext();
     if (!ctx) return;
 
     try {
-      // 5-second buffer of generated noise
+      if (type === 'fireplace') {
+        // 5-second buffer of deep warm combustion roar with embedded ember snaps
+        const bufferSize = ctx.sampleRate * 5;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        let lastOut = 0.0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          // Deep brown noise for warm low-end air draft and combustion
+          data[i] = (lastOut + 0.018 * white) / 1.018;
+          lastOut = data[i];
+          data[i] *= 2.8;
+
+          // Occasional micro ember sizzle in background
+          if (Math.random() < 0.0006) {
+            data[i] += (Math.random() - 0.5) * 0.4;
+          }
+        }
+
+        const noiseSource = ctx.createBufferSource();
+        noiseSource.buffer = buffer;
+        noiseSource.loop = true;
+
+        // Warm resonant lowpass filter simulating fireplace hearth chamber
+        const lowFilter = ctx.createBiquadFilter();
+        lowFilter.type = 'lowpass';
+        lowFilter.frequency.setValueAtTime(420, ctx.currentTime);
+        lowFilter.Q.setValueAtTime(1.1, ctx.currentTime);
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(volume * 0.22, ctx.currentTime);
+
+        noiseSource.connect(lowFilter);
+        lowFilter.connect(gain);
+        gain.connect(ctx.destination);
+
+        noiseSource.start();
+        this.ambientSource = noiseSource;
+        this.ambientGain = gain;
+        this.isAmbientPlaying = true;
+
+        // Schedule continuous stochastic wood snaps and crackles
+        this.scheduleFireCrackle(volume);
+        return;
+      }
+
+      // 4-second buffer of generated noise for rain / whitenoise
       const bufferSize = ctx.sampleRate * 4;
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
@@ -174,13 +225,78 @@ class SoundEngine {
     }
   }
 
+  // Realistic non-periodic wood log crackles & ember spark snaps
+  private scheduleFireCrackle(volume: number) {
+    if (!this.isAmbientPlaying) return;
+
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    // Trigger next crackle in 150ms to 950ms
+    const nextDelay = 150 + Math.random() * 800;
+
+    this.crackleTimer = setTimeout(() => {
+      if (!this.isAmbientPlaying) return;
+      this.playSingleCrackle(volume);
+      this.scheduleFireCrackle(this.currentVolume);
+    }, nextDelay);
+  }
+
+  private playSingleCrackle(volume: number) {
+    const ctx = this.getContext();
+    if (!ctx || ctx.state === 'suspended') return;
+
+    try {
+      const now = ctx.currentTime;
+      // Duration of a snap is very short (10ms - 35ms)
+      const duration = 0.012 + Math.random() * 0.025;
+      const bufferSize = Math.floor(ctx.sampleRate * duration);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const channel = buffer.getChannelData(0);
+
+      // Sharp burst with quick exponential decay
+      for (let i = 0; i < bufferSize; i++) {
+        const decay = Math.exp(-i / (bufferSize * 0.3));
+        channel[i] = (Math.random() * 2 - 1) * decay;
+      }
+
+      const burst = ctx.createBufferSource();
+      burst.buffer = buffer;
+
+      // Bandpass filter to tune the snap frequency (warm dry wood sound)
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(1400 + Math.random() * 2200, now);
+      filter.Q.setValueAtTime(1.8 + Math.random() * 1.5, now);
+
+      const gain = ctx.createGain();
+      const popIntensity = (0.08 + Math.random() * 0.28) * (volume * 1.2);
+      gain.gain.setValueAtTime(popIntensity, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      burst.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      burst.start(now);
+      burst.stop(now + duration + 0.01);
+    } catch {
+      // ignore transient audio context blips
+    }
+  }
+
   setAmbientVolume(volume: number) {
+    this.currentVolume = volume;
     if (this.ambientGain && this.ctx) {
-      this.ambientGain.gain.setValueAtTime(volume * 0.15, this.ctx.currentTime);
+      this.ambientGain.gain.setValueAtTime(volume * 0.18, this.ctx.currentTime);
     }
   }
 
   stopAmbient() {
+    if (this.crackleTimer) {
+      clearTimeout(this.crackleTimer);
+      this.crackleTimer = null;
+    }
     if (this.ambientSource) {
       try {
         (this.ambientSource as AudioBufferSourceNode).stop();

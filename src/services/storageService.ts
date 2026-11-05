@@ -42,9 +42,11 @@ export const DEFAULT_TIMER_SETTINGS: TimerSettings = {
   ambientNoise: 'none',
   ambientVolume: 0.3,
   timerBackground: {
-    type: 'chicago_fireplace',
-    dimLevel: 0.50,
+    type: 'animated_fireplace',
+    dimLevel: 0.45,
     blur: 0,
+    fireMotion: true,
+    fireCrackleSound: true,
   },
 };
 
@@ -266,7 +268,13 @@ export const storage = {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.TIMER_SETTINGS);
       if (!data) return DEFAULT_TIMER_SETTINGS;
-      return { ...DEFAULT_TIMER_SETTINGS, ...JSON.parse(data) };
+      const parsed = JSON.parse(data);
+      if (parsed.timerBackground?.type === 'chicago' || parsed.timerBackground?.type === 'tokyo' || parsed.timerBackground?.type === 'library') {
+        parsed.timerBackground.type = 'animated_fireplace';
+        parsed.timerBackground.fireMotion = true;
+        parsed.timerBackground.fireCrackleSound = true;
+      }
+      return { ...DEFAULT_TIMER_SETTINGS, ...parsed };
     } catch {
       return DEFAULT_TIMER_SETTINGS;
     }

@@ -57,6 +57,7 @@ export type TimerBackgroundType =
   | 'london_penthouse' 
   | 'paris_penthouse' 
   | 'mountain' 
+  | 'animated_fireplace'
   | 'custom';
 
 export interface TimerBackgroundConfig {
@@ -64,6 +65,8 @@ export interface TimerBackgroundConfig {
   customUrl?: string;
   dimLevel: number; // 0.2 to 0.85
   blur: number; // 0 to 8
+  fireMotion?: boolean; // enable live motion flames and dancing embers
+  fireCrackleSound?: boolean; // enable fireplace wood crackle sound
 }
 
 export interface TimerSettings {
@@ -76,7 +79,7 @@ export interface TimerSettings {
   autoStartPomodoros: boolean;
   soundEnabled: boolean;
   soundVolume: number;
-  ambientNoise: 'none' | 'rain' | 'whitenoise';
+  ambientNoise: 'none' | 'rain' | 'whitenoise' | 'fireplace';
   ambientVolume: number;
   timerBackground?: TimerBackgroundConfig;
 }
