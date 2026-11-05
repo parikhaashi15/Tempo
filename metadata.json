@@ -1,0 +1,6 @@
+{
+  "name": "Tempo - Lo-Fi Student Task & Study Hub",
+  "description": "Lo-fi pastel study workspace syncing Google Calendar, Canvas LMS assignments, offline tasks, daily target time goals, and an adaptive study timer suite.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
